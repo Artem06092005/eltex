@@ -1,0 +1,310 @@
+
+---------------------------------------------------------------------------------------------------------
+1.Найдите все записи из лога загрузки, доступного через команду journalctl с опцией -b в первые 20 секунд
+  с момента загрузки, начало загрузки определить автоматически
+---------------------------------------------------------------------------------------------------------
+
+root@eltex-practice2-pg2-v21:~# startTime=$(uptime -s)
+root@eltex-practice2-pg2-v21:~# echo "$startTime"
+2026-03-12 08:28:03
+root@eltex-practice2-pg2-v21:~# endTime=$(date -u -d "$(uptime -s) UTC + 20 seconds" '+ %F %T')
+root@eltex-practice2-pg2-v21:~# echo "$endTime"
+ 2026-03-12 08:28:23
+root@eltex-practice2-pg2-v21:~# journalctl -b -o short-precise --utc | head -n 20
+Mar 12 08:28:13.670429 localhost kernel: Linux version 6.8.0-55-generic (buildd@lcy02-amd64-095) (x86_64-linux-gnu-gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0, GNU ld (GNU Binutils for Ubuntu) 2.42) #57-Ubuntu SMP PREEMPT_DYNAMIC Wed Feb 12 23:42:21 UTC 2025 (Ubuntu 6.8.0-55.57-generic 6.8.12)
+Mar 12 08:28:13.670457 localhost kernel: Command line: BOOT_IMAGE=/vmlinuz-6.8.0-55-generic root=/dev/mapper/ubuntu--vg-ubuntu--lv ro
+Mar 12 08:28:13.670469 localhost kernel: KERNEL supported cpus:
+Mar 12 08:28:13.670477 localhost kernel:   Intel GenuineIntel
+Mar 12 08:28:13.670484 localhost kernel:   AMD AuthenticAMD
+Mar 12 08:28:13.670495 localhost kernel:   Hygon HygonGenuine
+Mar 12 08:28:13.670504 localhost kernel:   Centaur CentaurHauls
+Mar 12 08:28:13.670511 localhost kernel:   zhaoxin   Shanghai
+Mar 12 08:28:13.670519 localhost kernel: BIOS-provided physical RAM map:
+Mar 12 08:28:13.670527 localhost kernel: BIOS-e820: [mem 0x0000000000000000-0x000000000009fbff] usable
+Mar 12 08:28:13.670536 localhost kernel: BIOS-e820: [mem 0x000000000009fc00-0x000000000009ffff] reserved
+Mar 12 08:28:13.670543 localhost kernel: BIOS-e820: [mem 0x00000000000f0000-0x00000000000fffff] reserved
+Mar 12 08:28:13.670551 localhost kernel: BIOS-e820: [mem 0x0000000000100000-0x00000000bffd9fff] usable
+Mar 12 08:28:13.670559 localhost kernel: BIOS-e820: [mem 0x00000000bffda000-0x00000000bfffffff] reserved
+Mar 12 08:28:13.670568 localhost kernel: BIOS-e820: [mem 0x00000000feffc000-0x00000000feffffff] reserved
+Mar 12 08:28:13.670579 localhost kernel: BIOS-e820: [mem 0x00000000fffc0000-0x00000000ffffffff] reserved
+Mar 12 08:28:13.670587 localhost kernel: BIOS-e820: [mem 0x0000000100000000-0x000000013fffffff] usable
+Mar 12 08:28:13.670594 localhost kernel: BIOS-e820: [mem 0x000000fd00000000-0x000000ffffffffff] reserved
+Mar 12 08:28:13.670603 localhost kernel: NX (Execute Disable) protection: active
+Mar 12 08:28:13.670610 localhost kernel: APIC: Static calls initialized
+root@eltex-practice2-pg2-v21:~#
+
+
+---------------------------------------------------------------------------------------------------------
+2.Используя awk найдите все источники и их сообщения в файле auth.log
+ (найдите его find), в названии источника удалите информацию об идентификаторе процесса при помощи sed,
+ полученный результат отсортируйте по названию источника
+---------------------------------------------------------------------------------------------------------
+
+root@eltex-practice2-pg2-v21:~# cat /var/log/auth.log | awk '{src=$3;$1=$2=$3=""; print src ": " $0}' | sed -E 's/\[[0-9]+\]+[:]//' | sort | head -n 15
+chage:    changed password expiry for user1
+chage:    changed password expiry for user2
+chage:    changed password expiry for user3
+CRON:    pam_unix(cron:session): session closed for user root
+CRON:    pam_unix(cron:session): session closed for user root
+CRON:    pam_unix(cron:session): session closed for user root
+CRON:    pam_unix(cron:session): session closed for user root
+CRON:    pam_unix(cron:session): session closed for user root
+CRON:    pam_unix(cron:session): session closed for user root
+CRON:    pam_unix(cron:session): session closed for user root
+CRON:    pam_unix(cron:session): session closed for user root
+CRON:    pam_unix(cron:session): session closed for user root
+CRON:    pam_unix(cron:session): session closed for user root
+CRON:    pam_unix(cron:session): session closed for user root
+CRON:    pam_unix(cron:session): session closed for user root
+root@eltex-practice2-pg2-v21:~#
+
+
+---------------------------------------------------------------------------------------------------------
+3.Для результата из предыдущего пункта найдите количество повторений для каждого источника
+ и выведите их в виде списка «число_повторений источник», результат отсортируйте по убыванию количества повторений
+---------------------------------------------------------------------------------------------------------
+
+
+root@eltex-practice2-pg2-v21:~# awk '{src=$3;$1=$2=$3=""; print src ": " $0}' | sed -E 's/\[[0-9]+\]+[:]//' | sort | uniq -c | sort -rn
+    137 CRON:    pam_unix(cron:session): session opened for user root(uid=0) by root(uid=0)
+    137 CRON:    pam_unix(cron:session): session closed for user root
+      8 su:    pam_unix(su:session): session closed for user user2
+      7 sudo::    pam_unix(sudo:session): session closed for user root
+      7 sshd:    pam_unix(sshd:session): session opened for user root(uid=0) by root(uid=0)
+      6 sudo::    pam_unix(sudo:session): session opened for user root(uid=0) by root(uid=0)
+      6 sshd:    pam_unix(sshd:session): session closed for user root
+      5 su:    (to user2) root on pts/0
+      5 su:    pam_unix(su:session): session opened for user user2(uid=1002) by root(uid=0)
+      5 su:    pam_unix(su:session): session closed for user user1
+      4 (systemd)::    pam_unix(systemd-user:session): session opened for user root(uid=0) by root(uid=0)
+      4 su:    pam_unix(su:session): session closed for user user3
+      3 su:    (to user3) root on pts/0
+      3 su:    (to user1) user2 on pts/0
+      3 su:    pam_unix(su:session): session opened for user user3(uid=1003) by root(uid=0)
+      3 su:    pam_unix(su:session): session opened for user user1(uid=1001) by root(uid=1002)
+      2 su:    (to user2) user3 on pts/0
+      2 su:    (to user1) root on pts/0
+      2 su:    pam_unix(su:session): session opened for user user2(uid=1002) by root(uid=1003)
+      2 su:    pam_unix(su:session): session opened for user user1(uid=1001) by root(uid=0)
+      2 nologin::    Attempted login by root (UID: 1003) on /dev/pts/0
+      1 systemd-logind:    Session 617 logged out. Waiting for processes to exit.
+      1 systemd-logind:    Session 603 logged out. Waiting for processes to exit.
+      1 systemd-logind:    Session 601 logged out. Waiting for processes to exit.
+      1 systemd-logind:    Session 553 logged out. Waiting for processes to exit.
+      1 systemd-logind:    Session 541 logged out. Waiting for processes to exit.
+      1 systemd-logind:    Session 523 logged out. Waiting for processes to exit.
+      1 systemd-logind:    Removed session 617.
+      1 systemd-logind:    Removed session 603.
+      1 systemd-logind:    Removed session 601.
+      1 systemd-logind:    Removed session 553.
+      1 systemd-logind:    Removed session 541.
+      1 systemd-logind:    Removed session 523.
+      1 systemd-logind:    New session 619 of user root.
+      1 systemd-logind:    New session 617 of user root.
+      1 systemd-logind:    New session 603 of user root.
+      1 systemd-logind:    New session 601 of user root.
+      1 systemd-logind:    New session 553 of user root.
+      1 systemd-logind:    New session 541 of user root.
+      1 systemd-logind:    New session 523 of user root.
+      1 su:    (to user3) user2 on pts/0
+      1 su:    (to user2) user1 on pts/0
+      1 su:    pam_unix(su:session): session opened for user user3(uid=1003) by root(uid=1002)
+      1 su:    pam_unix(su:session): session opened for user user2(uid=1002) by root(uid=1001)
+      1 su::    pam_unix(su:auth): authentication failure; logname=root uid=1002 euid=0 tty=/dev/pts/0 ruser=user2 rhost= user=user1
+      1 su:    FAILED SU (to user1) user2 on pts/0
+      1 sudo::    user1 : TTY=pts/0 ; PWD=/home/user2 ; USER=root ; COMMAND=/bin/dmesg
+      1 sudo::    root : TTY=pts/0 ; PWD=/root ; USER=root ; COMMAND=/usr/bin/journalctl --since '2026-03-12 08:28:13 UTC' --until '2026-03-12 08:28:13 UTC' +20 sec
+      1 sudo::    root : TTY=pts/0 ; PWD=/root ; USER=root ; COMMAND=/usr/bin/journalctl --since '2026-03-12 08:28:13 UTC' --until '2026-03-12 08:28:13 UTC +20 sec'
+      1 sudo::    root : TTY=pts/0 ; PWD=/root ; USER=root ; COMMAND=/usr/bin/journalctl --since '2026-03-12 08:28:13 UTC'
+      1 sudo::    root : TTY=pts/0 ; PWD=/root ; USER=root ; COMMAND=/usr/bin/journalctl --since 2026-03-12 08:28:13 --until 2026-03-12 08:28:13 + 20 sec
+      1 sudo::    root : TTY=pts/0 ; PWD=/root ; USER=root ; COMMAND=/usr/bin/journalctl --since '2026-03-12 08:28:13' --until '2026-03-12 08:28:13 +20 sec'
+      1 sudo::    root : TTY=pts/0 ; PWD=/root ; USER=root ; COMMAND=/usr/bin/journalctl --since '2026-03-12 08:28:13' --until '2026-03-12 08:28:13 + 20 sec'
+      1 sudo::    pam_unix(sudo:session): session opened for user root(uid=0) by root(uid=1001)
+      1 sshd:    Received disconnect from 172.16.8.4 port 59278:11: disconnected by user
+      1 sshd:    Received disconnect from 172.16.8.4 port 58612:11: disconnected by user
+      1 sshd:    Received disconnect from 172.16.8.4 port 52652:11: disconnected by user
+      1 sshd:    Received disconnect from 172.16.8.4 port 44496:11: disconnected by user
+      1 sshd:    Received disconnect from 172.16.8.4 port 43002:11: disconnected by user
+      1 sshd:    Received disconnect from 172.16.8.4 port 41906:11: disconnected by user
+      1 sshd:    Disconnected from user root 172.16.8.4 port 59278
+      1 sshd:    Disconnected from user root 172.16.8.4 port 58612
+      1 sshd:    Disconnected from user root 172.16.8.4 port 52652
+      1 sshd:    Disconnected from user root 172.16.8.4 port 44496
+      1 sshd:    Disconnected from user root 172.16.8.4 port 43002
+      1 sshd:    Disconnected from user root 172.16.8.4 port 41906
+      1 sshd:    Accepted publickey for root from 172.16.8.4 port 59278 ssh2: RSA SHA256:m7BsKbcT6qaT3ZDpuuqPKKKORXCqrvsLYkL84WBSnH0
+      1 sshd:    Accepted publickey for root from 172.16.8.4 port 58612 ssh2: RSA SHA256:m7BsKbcT6qaT3ZDpuuqPKKKORXCqrvsLYkL84WBSnH0
+      1 sshd:    Accepted publickey for root from 172.16.8.4 port 53036 ssh2: RSA SHA256:m7BsKbcT6qaT3ZDpuuqPKKKORXCqrvsLYkL84WBSnH0
+      1 sshd:    Accepted publickey for root from 172.16.8.4 port 52652 ssh2: RSA SHA256:m7BsKbcT6qaT3ZDpuuqPKKKORXCqrvsLYkL84WBSnH0
+      1 sshd:    Accepted publickey for root from 172.16.8.4 port 44496 ssh2: RSA SHA256:m7BsKbcT6qaT3ZDpuuqPKKKORXCqrvsLYkL84WBSnH0
+      1 sshd:    Accepted publickey for root from 172.16.8.4 port 43002 ssh2: RSA SHA256:m7BsKbcT6qaT3ZDpuuqPKKKORXCqrvsLYkL84WBSnH0
+      1 sshd:    Accepted publickey for root from 172.16.8.4 port 41906 ssh2: RSA SHA256:m7BsKbcT6qaT3ZDpuuqPKKKORXCqrvsLYkL84WBSnH0
+      1 (sd-pam)::    pam_unix(systemd-user:session): session closed for user root
+      1 chage:    changed password expiry for user3
+      1 chage:    changed password expiry for user2
+      1 chage:    changed password expiry for user1
+                                                                                                                      
+
+---------------------------------------------------------------------------------------------------------
+4. В файле /etc/passwd найдите всех пользователей в системе, у которых установлен shell /usr/sbin/nologin
+ и выведите их в виде списка: «UID, username, список его групп», отсортированный в обратном порядке по UID,
+ cписок групп используйте из файла /etc/group
+---------------------------------------------------------------------------------------------------------
+
+
+root@eltex-practice2-pg2-v21:~# cat ~/opt/task4.sh
+#/bin/bash
+
+
+while IFS=: read -r user _ uid gid _ _ shell; do
+        if [[ "$shell" == "/usr/sbin/nologin" ]]; then
+                groups=$(id -Gn $user | tr ' ' ',')
+                echo "$uid , $user , $groups"
+        fi
+done < /etc/passwd | sort -rn
+root@eltex-practice2-pg2-v21:~#
+
+
+root@eltex-practice2-pg2-v21:~/opt# chmod +x task4.sh
+root@eltex-practice2-pg2-v21:~/opt# ./task4.sh
+65534 , nobody , nogroup
+1003 , user3 , user3,users,group
+998 , systemd-network , systemd-network
+997 , systemd-timesync , systemd-timesync
+992 , systemd-resolve , systemd-resolve
+991 , polkitd , polkitd
+989 , fwupd-refresh , fwupd-refresh
+109 , sshd , nogroup
+108 , usbmux , plugdev
+107 , landscape , landscape
+105 , tcpdump , tcpdump
+104 , uuidd , uuidd
+103 , syslog , syslog,adm
+101 , messagebus , messagebus
+42 , _apt , nogroup
+39 , irc , irc
+38 , list , list
+34 , backup , backup
+33 , www-data , www-data
+13 , proxy , proxy
+10 , uucp , uucp
+9 , news , news
+8 , mail , mail
+7 , lp , lp
+6 , man , man
+5 , games , games
+3 , sys , sys
+2 , bin , bin
+1 , daemon , daemon
+root@eltex-practice2-pg2-v21:~/opt#      
+	 
+----------------------------------------------------------------------------
+5.Найдите в результате вывода dmesg все строки, содержащие слово 'kernel‘
+----------------------------------------------------------------------------
+																		   
+root@eltex-practice2-pg2-v21:~# dmesg | grep -i "kernel"
+[    0.000000] KERNEL supported cpus:
+[    0.106994] Booting paravirtualized kernel on KVM
+[    0.108355] Kernel command line: BOOT_IMAGE=/vmlinuz-6.8.0-55-generic root=/dev/mapper/ubuntu--vg-ubuntu--lv ro
+[    0.108419] Unknown kernel command line parameters "BOOT_IMAGE=/vmlinuz-6.8.0-55-generic", will be passed to user space.
+[    0.305405] Memory: 3933488K/4193760K available (22528K kernel code, 4443K rwdata, 14344K rodata, 4988K init, 4716K bss, 260012K reserved, 0K cma-reserved)
+[    0.515913] DMA: preallocated 512 KiB GFP_KERNEL pool for atomic allocations
+[    0.515956] DMA: preallocated 512 KiB GFP_KERNEL|GFP_DMA pool for atomic allocations
+[    0.515998] DMA: preallocated 512 KiB GFP_KERNEL|GFP_DMA32 pool for atomic allocations
+[    1.066443] Loaded X.509 cert 'Build time autogenerated kernel key: e0bedf6fa049a1e09bd65ebab3904f14cdd5bc68'
+[    1.086542] Loaded X.509 cert 'Canonical Ltd. Kernel Module Signing: 88f752e560a1e0737e31163a466ad7b70a850c19'
+[    1.273797] Loaded X.509 cert 'Build time autogenerated kernel key: e0bedf6fa049a1e09bd65ebab3904f14cdd5bc68'
+[    1.331513] Freeing unused kernel image (initmem) memory: 4988K
+[    1.332381] Write protecting the kernel read-only data: 38912k
+[    1.336445] Freeing unused kernel image (rodata/data gap) memory: 2040K
+[    9.734776] systemd[1]: Listening on systemd-udevd-kernel.socket - udev Kernel Socket.
+[    9.819135] systemd[1]: Mounting sys-kernel-debug.mount - Kernel Debug File System...
+[    9.843551] systemd[1]: Mounting sys-kernel-tracing.mount - Kernel Trace File System...
+[   10.067100] systemd[1]: Starting modprobe@configfs.service - Load Kernel Module configfs...
+[   10.102613] systemd[1]: Starting modprobe@dm_mod.service - Load Kernel Module dm_mod...
+[   10.116692] systemd[1]: Starting modprobe@drm.service - Load Kernel Module drm...
+[   10.143690] systemd[1]: Starting modprobe@efi_pstore.service - Load Kernel Module efi_pstore...
+[   10.178821] systemd[1]: Starting modprobe@fuse.service - Load Kernel Module fuse...
+[   10.203630] systemd[1]: Starting modprobe@loop.service - Load Kernel Module loop...
+[   10.275716] systemd[1]: Starting systemd-modules-load.service - Load Kernel Modules...
+[   10.296983] systemd[1]: Starting systemd-remount-fs.service - Remount Root and Kernel File Systems...
+root@eltex-practice2-pg2-v21:~#     
+	
+----------------------------------------------------------------------------
+6.Подсчитайте количество строк в файле /var/log/kern.log
+----------------------------------------------------------------------------																												 
+																												 																											 
+root@eltex-practice2-pg2-v21:~# cat /var/log/kern.log | wc -l
+97
+
+
+------------------------------------------------------------------------------------------
+7.Отформатируйте вывод записей в /var/log/apt/history.log в следующем порядке, построчно:
+Commandline: … ; Start-Date: … ; End-Date: …
+------------------------------------------------------------------------------------------
+
+
+root@eltex-practice2-pg2-v21:~# awk '\  \
+> /Start-Date:/ {start=$0} \
+> /Commandline:/ {cmd=$0} \
+> /End-Date:/ {print cmd " ; " start " ; " $0} \
+> ' /var/log/apt/history.log
+Commandline: apt-get install --reinstall apt ; Start-Date: 2025-02-16  20:51:22 ; End-Date: 2025-02-16  20:51:24
+Commandline: apt-get install --reinstall base-files ; Start-Date: 2025-02-16  20:51:26 ; End-Date: 2025-02-16  20:51:28
+Commandline: apt-get install --reinstall base-passwd ; Start-Date: 2025-02-16  20:51:31 ; End-Date: 2025-02-16  20:51:32
+Commandline: apt-get install --reinstall bash ; Start-Date: 2025-02-16  20:51:35 ; End-Date: 2025-02-16  20:51:37
+Commandline: apt-get install --reinstall bsdutils ; Start-Date: 2025-02-16  20:51:39 ; End-Date: 2025-02-16  20:51:41
+Commandline: apt-get install --reinstall coreutils ; Start-Date: 2025-02-16  20:51:44 ; End-Date: 2025-02-16  20:51:45
+Commandline: apt-get install --reinstall dash ; Start-Date: 2025-02-16  20:51:48 ; End-Date: 2025-02-16  20:51:49
+Commandline: apt-get install --reinstall debconf ; Start-Date: 2025-02-16  20:51:52 ; End-Date: 2025-02-16  20:51:53
+Commandline: apt-get install --reinstall debianutils ; Start-Date: 2025-02-16  20:51:56 ; End-Date: 2025-02-16  20:51:58
+Commandline: apt-get install --reinstall diffutils ; Start-Date: 2025-02-16  20:52:00 ; End-Date: 2025-02-16  20:52:02
+Commandline: apt-get install --reinstall dpkg ; Start-Date: 2025-02-16  20:52:04 ; End-Date: 2025-02-16  20:52:06
+Commandline: apt-get install --reinstall e2fsprogs ; Start-Date: 2025-02-16  20:52:09 ; End-Date: 2025-02-16  20:52:10
+Commandline: apt-get install --reinstall findutils ; Start-Date: 2025-02-16  20:52:13 ; End-Date: 2025-02-16  20:52:14
+Commandline: apt-get install --reinstall gcc-14-base:amd64 ; Start-Date: 2025-02-16  20:52:17 ; End-Date: 2025-02-16  20:52:18
+Commandline: apt-get install --reinstall gpgv ; Start-Date: 2025-02-16  20:52:21 ; End-Date: 2025-02-16  20:52:23
+Commandline: apt-get install --reinstall grep ; Start-Date: 2025-02-16  20:52:25 ; End-Date: 2025-02-16  20:52:27
+Commandline: apt-get install --reinstall gzip ; Start-Date: 2025-02-16  20:52:29 ; End-Date: 2025-02-16  20:52:31
+Commandline: apt-get install --reinstall hostname ; Start-Date: 2025-02-16  20:52:34 ; End-Date: 2025-02-16  20:52:35
+Commandline: apt-get install --reinstall init-system-helpers ; Start-Date: 2025-02-16  20:52:38 ; End-Date: 2025-02-16  20:52:39
+Commandline: apt-get install --reinstall libacl1:amd64 ; Start-Date: 2025-02-16  20:52:42 ; End-Date: 2025-02-16  20:52:43
+Commandline: apt-get install --reinstall libapt-pkg6.0t64:amd64 ; Start-Date: 2025-02-16  20:52:46 ; End-Date: 2025-02-16  20:52:47
+Commandline: apt-get install --reinstall libassuan0:amd64 ; Start-Date: 2025-02-16  20:52:50 ; End-Date: 2025-02-16  20:52:51
+Commandline: apt-get install --reinstall libattr1:amd64 ; Start-Date: 2025-02-16  20:52:54 ; End-Date: 2025-02-16  20:52:56
+Commandline: apt-get install --reinstall libaudit-common ; Start-Date: 2025-02-16  20:52:58 ; End-Date: 2025-02-16  20:53:00
+Commandline: apt-get install --reinstall libaudit1:amd64 ; Start-Date: 2025-02-16  20:53:02 ; End-Date: 2025-02-16  20:53:04
+Commandline: apt-get install --reinstall libblkid1:amd64 ; Start-Date: 2025-02-16  20:53:06 ; End-Date: 2025-02-16  20:53:08
+Commandline: apt-get install --reinstall libbz2-1.0:amd64 ; Start-Date: 2025-02-16  20:53:11 ; End-Date: 2025-02-16  20:53:12
+Commandline: apt-get install --reinstall libc-bin ; Start-Date: 2025-02-16  20:53:15 ; End-Date: 2025-02-16  20:53:17
+Commandline: apt-get install --reinstall libc6:amd64 ; Start-Date: 2025-02-16  20:53:19 ; End-Date: 2025-02-16  20:53:22
+Commandline: apt-get install --reinstall libcap-ng0:amd64 ; Start-Date: 2025-02-16  20:53:25 ; End-Date: 2025-02-16  20:53:26
+Commandline: apt-get install --reinstall libcap2:amd64 ; Start-Date: 2025-02-16  20:53:29 ; End-Date: 2025-02-16  20:53:30
+Commandline: apt-get install --reinstall libcom-err2:amd64 ; Start-Date: 2025-02-16  20:53:33 ; End-Date: 2025-02-16  20:53:34
+Commandline: apt-get install --reinstall libcrypt1:amd64 ; Start-Date: 2025-02-16  20:53:37 ; End-Date: 2025-02-16  20:53:38
+Commandline: apt-get install --reinstall libdebconfclient0:amd64 ; Start-Date: 2025-02-16  20:53:41 ; End-Date: 2025-02-16  20:53:42
+Commandline: apt-get install --reinstall libext2fs2t64:amd64 ; Start-Date: 2025-02-16  20:53:45 ; End-Date: 2025-02-16  20:53:46
+Commandline: apt-get install --reinstall libffi8:amd64 ; Start-Date: 2025-02-16  20:53:49 ; End-Date: 2025-02-16  20:53:50
+Commandline: apt-get install --reinstall libgcc-s1:amd64 ; Start-Date: 2025-02-16  20:53:53 ; End-Date: 2025-02-16  20:53:54
+Commandline: apt-get install --reinstall libgcrypt20:amd64 ; Start-Date: 2025-02-16  20:53:57 ; End-Date: 2025-02-16  20:53:59
+Commandline: apt-get install --reinstall libgmp10:amd64 ; Start-Date: 2025-02-16  20:54:01 ; End-Date: 2025-02-16  20:54:03
+Commandline: apt-get install --reinstall libgnutls30t64:amd64 ; Start-Date: 2025-02-16  20:54:05 ; End-Date: 2025-02-16  20:54:07
+Commandline: apt-get install --reinstall libgpg-error0:amd64 ; Start-Date: 2025-02-16  20:54:10 ; End-Date: 2025-02-16  20:54:11
+Commandline: apt-get install --reinstall libhogweed6t64:amd64 ; Start-Date: 2025-02-16  20:54:14 ; End-Date: 2025-02-16  20:54:15
+Commandline: apt-get install --reinstall libidn2-0:amd64 ; Start-Date: 2025-02-16  20:54:18 ; End-Date: 2025-02-16  20:54:19
+Commandline: apt-get install --reinstall liblz4-1:amd64 ; Start-Date: 2025-02-16  20:54:22 ; End-Date: 2025-02-16  20:54:23
+Commandline: apt-get install --reinstall liblzma5:amd64 ; Start-Date: 2025-02-16  20:54:26 ; End-Date: 2025-02-16  20:54:27
+Commandline: apt-get install --reinstall libmd0:amd64 ; Start-Date: 2025-02-16  20:54:30 ; End-Date: 2025-02-16  20:54:32
+Commandline: apt-get install --reinstall libmount1:amd64 ; Start-Date: 2025-02-16  20:54:34 ; End-Date: 2025-02-16  20:54:36
+Commandline: apt-get install --reinstall libncursesw6:amd64 ; Start-Date: 2025-02-16  20:54:38 ; End-Date: 2025-02-16  20:54:39
+Commandline: apt-get install --reinstall libnettle8t64:amd64 ; Start-Date: 2025-02-16  20:54:42 ; End-Date: 2025-02-16  20:54:43
+Commandline: apt-get install --reinstall libnpth0t64:amd64 ; Start-Date: 2025-02-16  20:54:46 ; End-Date: 2025-02-16  20:54:48
+Commandline: apt-get install --reinstall libp11-kit0:amd64 ; Start-Date: 2025-02-16  20:54:50 ; End-Date: 2025-02-16  20:54:52
+Commandline: apt-get install --reinstall libpam-modules:amd64 ; Start-Date: 2025-02-16  20:54:54 ; End-Date: 2025-02-16  20:54:56
+Commandline: apt-get install --reinstall libpam-modules-bin ; Start-Date: 2025-02-16  20:54:58 ; End-Date: 2025-02-16  20:55:00
+Commandline: apt-get install --reinstall libpam-runtime ; Start-Date: 2025-02-16  20:55:03 ; End-Date: 2025-02-16  20:55:04
+Commandline: apt-get install --reinstall libpam0g:amd64 ; Start-Date: 2025-02-16  20:55:07 ; End-Date: 2025-02-16  20:55:08
+Commandline: apt-get install --reinstall libpcre2-8-0:amd64 ; Start-Date: 2025-02-16  20:55:11 ; End-Date: 2025-02-16  20:55:12
+......
+
+Script done on 2026-03-16 18:10:51+07:00 [COMMAND_EXIT_CODE="0"]
