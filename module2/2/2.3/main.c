@@ -3,11 +3,9 @@
 
 #include "calc.h"
 
-Command commands[] = {{"Сложение", sum_two},
-					  {"Вычитание", sub},
-					  {"Умножение", mul},
-					  {"Деление", div},
-					  {"Максимум", max2}};
+Command commands[] = {{"Сложение", sum_two}, {"Вычитание", sub},
+					  {"Умножение", mul},	 {"Деление", div},
+					  {"Максимум", max2},	 {"fjafhjakja", div}};
 
 const int num_commands = sizeof(commands) / sizeof(Command);
 
