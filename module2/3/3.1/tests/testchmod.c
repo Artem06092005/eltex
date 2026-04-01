@@ -34,10 +34,21 @@ void test_checkFileMode(void) {
 }
 
 void test_simulateChmod(void) {
-	char *existingFile = "src/chmod.c";
+	char *testFile = "src/chmod.c";
 
-	TEST_ASSERT_EQUAL_HEX16(0700, simulateChmod("700", existingFile));
-	TEST_ASSERT_EQUAL_HEX16(0444, simulateChmod("r--r--r--", existingFile));
+	TEST_ASSERT_EQUAL_HEX16(0700, simulateChmod("700", testFile));
+	TEST_ASSERT_EQUAL_HEX16(0444, simulateChmod("r--r--r--", testFile));
+
+	TEST_ASSERT_EQUAL_HEX16(0665, simulateChmod("o+x", testFile));
+
+	TEST_ASSERT_EQUAL_HEX16(0775, simulateChmod("a+x", testFile));
+
+	TEST_ASSERT_EQUAL_HEX16(0245, simulateChmod("o+x,g-w,u-r", testFile));
+
+	TEST_ASSERT_EQUAL_HEX16(0000, simulateChmod("a-rwx", testFile));
+	TEST_ASSERT_EQUAL_HEX16(0777, simulateChmod("a+rwx", testFile));
+
+	TEST_ASSERT_EQUAL_HEX16(0674, simulateChmod("g-rw,g+rwx", testFile));
 }
 
 void test_simulateChmodError(void) {
