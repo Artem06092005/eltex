@@ -5,15 +5,11 @@
 #include <sys/msg.h>
 #include <unistd.h>
 
-enum { size_text = 50, server_priority = 10, quantityClietns = 50 };
+#include "data.h"
+
+enum { quantityClietns = 50 };
 
 int msqid = -1;
-
-struct msgbuf {
-	long mtype;
-	long sender_id;
-	char mtext[size_text];
-} msgbuf;
 
 long clients[quantityClietns] = {0};
 

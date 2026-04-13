@@ -5,15 +5,9 @@
 #include <sys/msg.h>
 #include <unistd.h>
 
-enum { size_text = 50, server_priority = 10 };
+#include "data.h"
 
 char connect_msg[] = "Connect to server";
-
-struct msgbuf {
-	long mtype;
-	long sender_id;
-	char mtext[size_text];
-} msgbuf;
 
 int main(int argc, char* argv[]) {
 	if (argc < 2) {
