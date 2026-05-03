@@ -159,7 +159,8 @@ void dostuff(int sock) {
 				fwrite(buff, 1, n, file);
 			}
 			fclose(file);
-			write(sock, "File received\n", 14);
+			const char rec[] = "File received\n";
+			write(sock, rec, strlen(rec));
 			// break;
 
 		} else {
