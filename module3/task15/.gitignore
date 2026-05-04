@@ -1,3 +1,6 @@
 /serverDir
 client
+client.o
 server
+server.o
+stateHandler.o

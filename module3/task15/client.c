@@ -96,7 +96,6 @@ int main(int argc, char* argv[]) {
 
 			fgets(buff, sizeof(buff) - 1, stdin);
 			buff[strcspn(buff, "\n")] = '\0';
-			char remote_name[256];
 			send(my_sock, buff, strlen(buff), 0);
 
 			n = recv(my_sock, buff, sizeof(buff) - 1, 0);

@@ -2,11 +2,20 @@ CC=gcc
 
 all: client server
 
-client: client.c
-	$(CC) client.c -o client
+client: client.o
+	$(CC) -o client client.o
 
-server: server.c 
-	$(CC) server.c -o server
+client.o: client.c
+	$(CC) -c client.c
+
+server: server.o stateHandler.o
+	$(CC)  -o server server.o stateHandler.o
+
+stateHandler.o: stateHandler.c stateHandler.h
+	$(CC)  -c stateHandler.c
+
+server.o: server.c stateHandler.h
+	$(CC)  -c server.c
 
 .PHONY: clear
 clear:
