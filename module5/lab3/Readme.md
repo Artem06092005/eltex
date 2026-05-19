@@ -8,7 +8,7 @@ sudo insmod kbleds.ko
 
 ## Изменяем значение в sysfs:
 echo 1 >  /sys/kernel/systest/test
-![](sysfs.jpeg)
+![](screenshots/sysfs.jpeg)
 
 ## Выгрузка:
 sudo rmmod kbleds.ko
