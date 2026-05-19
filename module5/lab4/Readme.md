@@ -9,6 +9,7 @@ sudo insmod chardev.ko
 ## Ввод вывод в chardev(под root):  
 echo "text" > /dev/chardev  
 cat /dev/chardev    
+
 ![](screenshots/io.jpeg) 
 
 ## Выгрузка:
