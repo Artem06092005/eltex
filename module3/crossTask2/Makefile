@@ -3,8 +3,8 @@ CC=gcc
 all: main
 	
 
-main: main.c 
-	$(CC) -o main main.c 
+main: main.c LinkedList.c driverRun.c dispatcher.c
+	$(CC) -o main main.c LinkedList.c driverRun.c dispatcher.c
 
 
 .PHONY: clean
